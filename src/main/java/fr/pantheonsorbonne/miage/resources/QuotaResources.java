@@ -6,11 +6,10 @@ import fr.pantheonsorbonne.miage.service.InsufficientQuotaException;
 import fr.pantheonsorbonne.miage.service.NoSuchQuotaException;
 import fr.pantheonsorbonne.miage.service.QuotaService;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 
+import java.awt.*;
 import java.util.List;
 
 @Path("/vendor/{vendorId}/quota")
@@ -24,6 +23,7 @@ public class QuotaResources {
 
     @GET
     @Path("/{concertId}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Quota getQuotaForVendorAndConcert(
             @PathParam("vendorId") int vendorId,
             @PathParam("concertId") int concertId) {
@@ -31,6 +31,7 @@ public class QuotaResources {
     }
 
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
     public List<Quota> getQuotaForVendor(
             @PathParam("vendorId") int vendorId) {
         return dao.getQuotas(vendorId);
@@ -42,11 +43,17 @@ public class QuotaResources {
             @PathParam("vendorId") int vendorId,
             @PathParam("concertId") int concertId,
             BookingRequest bookingRequest) throws NoSuchQuotaException, InsufficientQuotaException {
-        quotaService.bookTickets(
-                vendorId,
-                concertId,
-                bookingRequest.seated(),
-                bookingRequest.standing());
+        try {
+            quotaService.bookTickets(
+                    vendorId,
+                    concertId,
+                    bookingRequest.seated(),
+                    bookingRequest.standing());
+        } catch (InsufficientQuotaException e) {
+            throw new WebApplicationException("Insufficient quota",400);
+        } catch (NoSuchQuotaException e) {
+            throw new WebApplicationException("No such quota",400);
+        }
     }
 
 }
